@@ -65,6 +65,33 @@ cd backend && SPRING_PROFILES_ACTIVE=postgres ./mvnw spring-boot:run
 
 De H2-database staat in `backend/data/`. Verwijder die map om opnieuw te beginnen. De H2-console vind je op http://localhost:8080/h2-console (JDBC URL `jdbc:h2:file:./data/imdbee`, gebruiker `sa`, leeg wachtwoord).
 
+## Online zetten (Vercel + Render + Supabase)
+
+| Onderdeel | Dienst | Configuratie |
+|---|---|---|
+| Frontend | Vercel | `frontend/vercel.json` stuurt `/api/*` door naar de backend |
+| Backend | Render (Docker, gratis plan) | `render.yaml` + `backend/Dockerfile` |
+| Database | Supabase (PostgreSQL) | profiel `postgres`, via de **Session pooler** |
+
+**Supabase**
+- Gebruik de *Session pooler*-verbinding (IPv4). De directe verbinding werkt niet vanaf Render.
+- Row Level Security staat aan op `app_user`, `review` en `movie_data`, en `anon`/`authenticated` hebben geen rechten. Zo zijn de tabellen niet leesbaar via de publieke Supabase REST-API; de backend verbindt als `postgres` en heeft wel toegang. **Maak je later een nieuwe tabel, zet daar dan ook RLS aan.**
+
+**Render:** *New → Blueprint* → kies deze repository. Vul daarna in:
+
+| Variabele | Waarde |
+|---|---|
+| `DB_URL` | `jdbc:postgresql://aws-1-eu-central-1.pooler.supabase.com:5432/postgres?sslmode=require` |
+| `DB_USERNAME` | `postgres.<project-ref>` |
+| `DB_PASSWORD` | je Supabase-databasewachtwoord |
+| `TMDB_API_KEY` | je TMDB-token |
+
+`JWT_SECRET` wordt automatisch gegenereerd. Het gratis plan slaapt na 15 minuten zonder verkeer; de eerste aanvraag daarna duurt ongeveer een minuut.
+
+**Vercel:** deploy de map `frontend`. Pas in `frontend/vercel.json` de backend-URL aan als je Render-service anders heet dan `imdbee-api`.
+
+**Lokaal tegen Supabase draaien:** zet `DB_URL`, `DB_USERNAME` en `DB_PASSWORD` in `backend/.env` en start met `SPRING_PROFILES_ACTIVE=postgres ./mvnw spring-boot:run`. Zonder dat profiel gebruikt de backend de lokale H2-database.
+
 ## API
 
 | Methode | Pad | Login | Beschrijving |
