@@ -1,0 +1,16 @@
+# Optional: PostgreSQL for local development.
+# Start with `docker compose up -d`, then run the backend with SPRING_PROFILES_ACTIVE=postgres.
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: imdbee
+      POSTGRES_USER: imdbee
+      POSTGRES_PASSWORD: imdbee
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

@@ -1,0 +1,114 @@
+@import 'tailwindcss';
+
+@theme {
+  /* Black and yellow, taken from the IMDBee logo */
+  --color-ink: #000000;
+  --color-night: #000000;     /* page background */
+  --color-bar: #121212;       /* header, footer */
+  --color-coal: #1a1a1a;      /* cards, inputs */
+  --color-ash: #2c2c2c;       /* borders, hover */
+  --color-smoke: #a6a6a6;     /* secondary text */
+  --color-snow: #ffffff;      /* primary text */
+  --color-honey: #fbc50b;     /* logo yellow: brand, buttons, stars */
+  --color-honey-dark: #e0ae00;
+  --color-link: #5799ef;      /* text links */
+
+  --font-sans: 'Roboto', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Archivo', 'Roboto', ui-sans-serif, sans-serif;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background: var(--color-night);
+    color: var(--color-snow);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-honey);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* Condensed display type for titles and the logo */
+  .display {
+    font-family: var(--font-display);
+    font-variation-settings: 'wdth' 80;
+    font-weight: 900;
+    letter-spacing: -0.01em;
+    line-height: 0.95;
+  }
+
+  /* Section title with a yellow bar in front, like the logo's badge */
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-weight: 700;
+  }
+  .section-title::before {
+    content: '';
+    width: 4px;
+    height: 1.1em;
+    border-radius: 2px;
+    background: var(--color-honey);
+    flex-shrink: 0;
+  }
+
+  .link { color: var(--color-link); }
+  .link:hover { text-decoration: underline; }
+
+  .page {
+    width: 100%;
+    padding-inline: 1rem;
+  }
+  @media (min-width: 768px) {
+    .page { padding-inline: 3rem; }
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 0.375rem;
+    padding: 0.6rem 1.25rem;
+    font-weight: 600;
+    transition: background-color 0.15s, opacity 0.15s, transform 0.15s;
+  }
+  .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .btn-primary { background: var(--color-honey); color: #0a0a0a; }
+  .btn-primary:hover:not(:disabled) { background: var(--color-honey-dark); }
+  .btn-primary:disabled { background: var(--color-ash); color: var(--color-smoke); opacity: 1; }
+  .btn-light { background: var(--color-snow); color: black; }
+  .btn-light:hover:not(:disabled) { background: rgb(255 255 255 / 0.8); }
+  .btn-ghost { background: rgb(255 255 255 / 0.12); color: white; }
+  .btn-ghost:hover:not(:disabled) { background: rgb(255 255 255 / 0.2); }
+
+  .field {
+    width: 100%;
+    border-radius: 0.375rem;
+    border: 1px solid var(--color-ash);
+    background: var(--color-coal);
+    padding: 0.75rem 1rem;
+    color: var(--color-snow);
+    transition: border-color 0.15s;
+  }
+  .field::placeholder { color: #737373; }
+  .field:focus { outline: none; border-color: var(--color-honey); }
+  .field[aria-invalid='true'] { border-color: #e87c03; }
+
+  .no-scrollbar { scrollbar-width: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+}
