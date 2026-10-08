@@ -86,7 +86,10 @@ De H2-database staat in `backend/data/`. Verwijder die map om opnieuw te beginne
 | `DB_PASSWORD` | je Supabase-databasewachtwoord |
 | `TMDB_API_KEY` | je TMDB-token |
 
-`JWT_SECRET` wordt automatisch gegenereerd. Het gratis plan slaapt na 15 minuten zonder verkeer; de eerste aanvraag daarna duurt ongeveer een minuut.
+`JWT_SECRET` wordt automatisch gegenereerd. Het gratis plan slaapt na 15 minuten zonder verkeer; de eerste aanvraag daarna duurt ongeveer een minuut. Daarom:
+
+- de GitHub Action `.github/workflows/keep-alive.yml` roept elke 10 minuten de health check en een database-endpoint aan, zodat Render wakker blijft en Supabase het project niet pauzeert (één service die altijd aan staat past in de 750 gratis uren per maand);
+- slaapt de backend toch, dan probeert de frontend het tot 90 seconden opnieuw (`src/services/api.js`) en toont hij "De server wordt wakker…" in plaats van een foutmelding.
 
 **Vercel:** deploy de map `frontend`. Pas in `frontend/vercel.json` de backend-URL aan als je Render-service anders heet dan `imdbee-api`.
 

@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { serverWaking } from './serverStatus'
 
 const TOKEN_KEY = 'imdbee.token'
 
@@ -26,10 +27,36 @@ export function setUnauthorizedHandler(fn) {
   onUnauthorized = fn
 }
 
+// A sleeping backend needs up to a minute to start. Until then requests time out or the proxy
+// answers 502/503/504; keep retrying for a while instead of showing an error straight away.
+const WAKE_BUDGET_MS = 90_000
+const RETRY_DELAY_MS = 3_000
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+function isWakingError(error) {
+  const status = error.response?.status
+  if (status === 502 || status === 503 || status === 504) return true // the request never reached the app
+  // No answer at all: only retry reads, a write might have arrived after all
+  return !error.response && (error.config?.method ?? 'get').toLowerCase() === 'get'
+}
+
 api.interceptors.response.use(
-  (res) => res,
-  (error) => {
-    const isAuthCall = error.config?.url?.startsWith('/auth/login') || error.config?.url?.startsWith('/auth/register')
+  (res) => {
+    serverWaking.value = false
+    return res
+  },
+  async (error) => {
+    const config = error.config
+    if (config && isWakingError(error)) {
+      config.wakeStartedAt ??= Date.now()
+      if (Date.now() - config.wakeStartedAt < WAKE_BUDGET_MS) {
+        serverWaking.value = true
+        await sleep(RETRY_DELAY_MS)
+        return api(config)
+      }
+    }
+    serverWaking.value = false
+    const isAuthCall = config?.url?.startsWith('/auth/login') || config?.url?.startsWith('/auth/register')
     if (error.response?.status === 401 && !isAuthCall && tokenStorage.get()) {
       onUnauthorized()
     }
@@ -41,8 +68,11 @@ api.interceptors.response.use(
 export function parseError(error) {
   const data = error?.response?.data
   if (data?.message) return { message: data.message, fields: data.fieldErrors ?? {} }
-  if (error?.code === 'ECONNABORTED' || !error?.response) {
-    return { message: 'Kan de server niet bereiken. Draait de backend op poort 8080?', fields: {} }
+  if (error?.code === 'ECONNABORTED' || !error?.response || [502, 503, 504].includes(error.response.status)) {
+    const message = import.meta.env.DEV
+      ? 'Kan de server niet bereiken. Draait de backend op poort 8080?'
+      : 'De server reageert niet. Probeer het over een minuut opnieuw.'
+    return { message, fields: {} }
   }
   const status = error.response.status
   if (status === 403) {

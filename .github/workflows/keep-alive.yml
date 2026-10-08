@@ -1,0 +1,24 @@
+# Keeps the live demo awake. Render's free plan sleeps after 15 minutes without traffic (the first
+# visitor then waits about a minute) and Supabase pauses a free project after 7 days without use.
+# Every 10 minutes this calls the health check and one endpoint that reads the database.
+# One always-on service fits in Render's 750 free hours per month.
+name: Keep the demo awake
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Wake the backend and touch the database
+        run: |
+          for path in /api/health /api/reviews/movie/550; do
+            curl --fail --silent --show-error --retry 6 --retry-delay 15 --retry-all-errors --max-time 90 \
+              -o /dev/null -w "$path %{http_code} in %{time_total}s\n" "https://imdbee-api.onrender.com$path"
+          done
